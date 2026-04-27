@@ -88,6 +88,6 @@ def list_documents(project_id: int,
     if project is None:
         raise HTTPException(status_code=404, detail="Project not found")
 
-    list_documents = db.query(models.Document).filter(models.Document.project_id).order_by(models.Document.id.desc()).all()
+    list_documents = db.query(models.Document).filter(models.Document.project_id == project_id).order_by(models.Document.id.desc()).all()
     return list_documents
     
