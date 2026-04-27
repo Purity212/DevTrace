@@ -3,6 +3,9 @@ from fastapi import FastAPI
 from backend.app.database import Base, engine
 from backend.app.api import projects
 
+# Первоначальная инициализация таблиц (из Base) в сесси БД
+Base.metadata.create_all(bind=engine)
+
 app = FastAPI(title="DevTrace")
 app.include_router(projects.router)
 

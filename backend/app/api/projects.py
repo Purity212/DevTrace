@@ -34,3 +34,19 @@ def create_project(project_data: schemas.ProjectCreate,
     db.refresh(db_project)
     
     return db_project
+
+# /project - получить имеющиеся проекты
+@router.get("", response_model=list[schemas.ProjectRead])
+def list_projects(db: Session = Depends(get_db)): # вызывается перед выполнением endpoint
+    """Получение отсортированного списка проектов из БД
+    SELECT * 
+    FROM projects pr
+    ORDER BY pr.id DESC
+
+    Args:
+        db (Session, optional): Сессия БД от database.py.
+    Returns:
+        list_projects (list[schemas.ProjectRead]): список проектов в фформате ProjectRead.
+    """
+    list_projects = db.query(models.Project).order_by(models.Project.id.desc()).all()
+    return list_projects
