@@ -40,12 +40,14 @@ def extract_code_chunks(text: str) -> list[CodeChunkData]:
                 raise ValueError("Can`t define bounds of function")
 
             code_chunks.append(
-                {
-                    "name": node.name,
-                    "content" : "\n".join(lines[node.lineno - 1: node.end_linelo]), # всё содержэание от строки начала до строки конца
-                    "start_line": node.lineno,
-                    "end_line": node.end_lineno
-                }
+                CodeChunkData(
+                    {
+                        "name": node.name,
+                        "content" : "\n".join(lines[node.lineno - 1: node.end_lineno]), # всё содержэание от строки начала до строки конца
+                        "start_line": node.lineno,
+                        "end_line": node.end_lineno
+                    }
+                )
             )
     
     return code_chunks

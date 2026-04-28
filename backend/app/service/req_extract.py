@@ -1,5 +1,7 @@
 import re
 
+from typing import TypedDict
+
 """Модуль предназначен для описания логики извлечения требований из сырого текста в utf-8"""
 
 # На первоначальном этапе - извлечение с помощью регулярных выражений с поиском следующего паттерна:
@@ -12,7 +14,18 @@ REQUIREMENT_PATTERN = re.compile(
     re.MULTILINE,
 )
 
-def extract_reqs(text: str) -> list[dict[str, str]]:
+class RequirementData(TypedDict):
+    """
+    Класс требования.
+
+    Args: dict (TypeDict): словарь с однозначным заданием требования следующего содержания: 
+                            requirement_key: Идентификатор требования.
+                            text: Текст требования.
+    """
+    requirement_key: str
+    text: str
+
+def extract_reqs(text: str) -> list[RequirementData]:
     """Извлекает требования из сырого текста
     Формат: 
     REQ-...
@@ -32,10 +45,12 @@ def extract_reqs(text: str) -> list[dict[str, str]]:
         requirement_text = match.group(2).strip()
         
         reqs.append(
-            {
-                "requirement_key": requirement_key,
-                "text": requirement_text,
-            }
+            RequirementData(
+                {
+                    "requirement_key": requirement_key,
+                    "text": requirement_text,
+                }
+            )
         )
 
     return reqs
