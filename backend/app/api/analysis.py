@@ -9,6 +9,8 @@ from backend.app.database import get_db
 # получения функции вывода резултатов анализа
 from backend.app.service.analysis import analyze
 
+from backend.app.service.candidate_find import find_candidates
+
 # роутер эндпоинтов для analysis
 router = APIRouter(prefix="/projects/{project_id}/analyze", 
                    tags=["analysis"])
@@ -44,4 +46,5 @@ def run_analysis(project_id: int,
     if code_doc is None:
         raise HTTPException(status_code=400, detail="Souce code document not found")
     
-    return analyze(req_doc.content, code_doc.content)
+    # return analyze(req_doc.content, code_doc.content)
+    return find_candidates(analyze(req_doc.content, code_doc.content))
