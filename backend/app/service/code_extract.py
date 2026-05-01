@@ -24,8 +24,7 @@ def extract_code_chunks(text: str) -> list[CodeChunkData]:
 
     # проверка на пустой файл
     if not text.strip():
-        # return []
-        raise Exception("Document is empty")
+        raise ValueError("Document is empty")
     
     # парсинг кода
     try:

@@ -36,7 +36,7 @@ def extract_reqs(text: str) -> list[RequirementData]:
         text (str): текст документа требований
 
     Returns:
-        list[dict[str, str]]: список из словарей, где каждый словарь - это соответствие: "идентификатор требования" - "текст требования" 
+        list[RequirementData]: список из RequirementData
     """
     reqs = []
     
@@ -52,5 +52,8 @@ def extract_reqs(text: str) -> list[RequirementData]:
                 }
             )
         )
+
+    if not reqs: 
+        raise ValueError("Requirements no found in document")
 
     return reqs

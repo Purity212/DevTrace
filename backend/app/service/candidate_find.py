@@ -8,6 +8,10 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 
 from backend.app.service.similarity_algs.cosine_similarity import cosine_similarity
 
+CANDIDATE_FOUND_THRESHOLD = 0.20
+AMBIGUOUS_THRESHOLD = 0.10
+
+
 class CandidateData(TypedDict):
     """
     Класс кандидата (соответствие требование - искходный код).
@@ -97,37 +101,34 @@ def find_candidates(analyze_data : AnalyzeData) -> list[CandidateData]:
         chunk_ind = code_scores.index(req_best_score)
         code_chunk = code_chunks[chunk_ind]
 
+        status = set_candidate_status(req_best_score)
+
         # определение статуса кандидата (временно грубая оценка по score)
 
         candidate = CandidateData(
-    {"requirement_key": requirement["requirement_key"] if req_best_score > 0 else None,
-            "requirement_text": requirement["text"] if req_best_score > 0 else None,
-            "code_chunk_name": code_chunk['name'] if req_best_score > 0 else None,
-            "code_chunk_content" : code_chunk['content'] if req_best_score > 0 else None,
-            "similarity_score": req_best_score,
-            "candidate_status": set_candidate_status(req_best_score)})
+            {"requirement_key": requirement["requirement_key"],
+            "requirement_text": requirement["text"],
+            "code_chunk_name": code_chunk['name'] if status != "no_candidate_found" else "no_candidate_found",
+            "code_chunk_content" : code_chunk['content'] if status != "no_candidate_found" else "no_candidate_found",
+            "similarity_score": round(req_best_score, 5),
+            "candidate_status": status})
 
         all_candidates.append(candidate)
-    
 
-
-    #similarity_matrix = cosine_similarity(X_req, X_code)
-    #print(similarity_matrix)
-
-    result = {
-        "names": names.tolist(),
-        "shape": list(X.shape),
-        "candidates_list" : all_candidates
-    }
-    return result 
+    # result = {
+    #     # для отладки в эндпоинте analyze
+    #     "candidates_list" : all_candidates
+    # }
+    # return result 
+    return all_candidates
 
 def set_candidate_status(score: float) -> str: 
     """
     Опреляет статус кандидата по грубой оценке score
     """
-    if score >= 0.2:
+    if score >= CANDIDATE_FOUND_THRESHOLD:
         return "candidate_found"
-    if score >= 0.1:
+    if score >= AMBIGUOUS_THRESHOLD:
         return "ambiguous"
-    return "no_candidate"
+    return "no_candidate_found"
 
