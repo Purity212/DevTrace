@@ -32,7 +32,7 @@ class CandidateData(TypedDict):
     candidate_status: str
 
 
-def find_candidates(analyze_data : AnalyzeData) -> list[CandidateData]:
+def find_candidates(requirements: list[RequirementData], code_chunks: list[CodeChunkData]) -> list[CandidateData]:
     """
     Реализует поиск кандидатов на соответствие среди требований и фрагментов кода, опираясь на оценку "схожести", кандидат - пара с высшей оценкой.
 
@@ -50,11 +50,9 @@ def find_candidates(analyze_data : AnalyzeData) -> list[CandidateData]:
 
     Returns: Информацию о кандидате в формате CandidateData
     """
-    requirements : list[RequirementData] = analyze_data['requirements']
     if len(requirements) < 1:
         raise ValueError("Requirements list is empty")
 
-    code_chunks : list[CodeChunkData] = analyze_data['code_chunks']
     if len(code_chunks) < 1: 
         raise ValueError("Code chunks list is empty")
     
@@ -115,11 +113,6 @@ def find_candidates(analyze_data : AnalyzeData) -> list[CandidateData]:
 
         all_candidates.append(candidate)
 
-    # result = {
-    #     # для отладки в эндпоинте analyze
-    #     "candidates_list" : all_candidates
-    # }
-    # return result 
     return all_candidates
 
 def set_candidate_status(score: float) -> str: 
