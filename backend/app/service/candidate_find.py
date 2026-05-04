@@ -2,7 +2,6 @@ from typing import TypedDict
 
 from backend.app.service.req_extract import RequirementData
 from backend.app.service.code_extract import CodeChunkData
-from backend.app.service.analysis import AnalyzeData, analyze
 
 from sklearn.feature_extraction.text import TfidfVectorizer
 
