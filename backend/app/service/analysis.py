@@ -3,7 +3,7 @@ from typing import TypedDict
 from backend.app.service.req_extract import RequirementData, extract_reqs
 from backend.app.service.code_extract import CodeChunkData, extract_code_chunks
 from backend.app.service.candidate_find import CandidateData, find_candidates
-# import test cases module
+from backend.app.service.test_case_generate import TypedDict, generate_draft_test_cases
 # import verification matrix module
 
 """Пайплан обработки входных данных и формирование результата"""
@@ -38,8 +38,8 @@ def analyze(text_from_req_file: str, text_from_code_file: str):
     code_chunks = extract_code_chunks(text_from_code_file)
     # поиск схожих кандидатов
     candidates = find_candidates(requirements=requirements, code_chunks=code_chunks)
-    # TODO
-    # test_cases =
+    # формирование базовых тест-кейсов
+    test_cases = generate_draft_test_cases(requirements=requirements)
     # TODO
     # verification_matrix = 
 
@@ -47,6 +47,7 @@ def analyze(text_from_req_file: str, text_from_code_file: str):
         {
             "requirements": requirements,
             "code_chunks": code_chunks,
-            "candidates": candidates
+            "candidates": candidates,
+            "test_cases": test_cases
         }
         )
