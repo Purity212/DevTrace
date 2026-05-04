@@ -3,8 +3,8 @@ from typing import TypedDict
 from backend.app.service.req_extract import RequirementData, extract_reqs
 from backend.app.service.code_extract import CodeChunkData, extract_code_chunks
 from backend.app.service.candidate_find import CandidateData, find_candidates
-from backend.app.service.test_case_generate import TypedDict, generate_draft_test_cases
-# import verification matrix module
+from backend.app.service.test_case_generate import TestCaseData, generate_draft_test_cases
+from backend.app.service.verification_matrix import VerificationMatrixRowData, build_verification_matrix
 
 """Пайплан обработки входных данных и формирование результата"""
 
@@ -26,8 +26,8 @@ class AnalyzeData(TypedDict):
     requirements : list[RequirementData]
     code_chunks : list[CodeChunkData] 
     candidates: list[CandidateData]
-    # test_cases
-    # verification_matrix
+    test_cases: list[TestCaseData]
+    verification_matrix: list[VerificationMatrixRowData]
 
 
 def analyze(text_from_req_file: str, text_from_code_file: str):
@@ -40,14 +40,15 @@ def analyze(text_from_req_file: str, text_from_code_file: str):
     candidates = find_candidates(requirements=requirements, code_chunks=code_chunks)
     # формирование базовых тест-кейсов
     test_cases = generate_draft_test_cases(requirements=requirements)
-    # TODO
-    # verification_matrix = 
+    # формирование матрицы трассируемости
+    verification_matrix = build_verification_matrix(requirements=requirements, candidates=candidates, test_cases=test_cases)
 
     return AnalyzeData(
         {
             "requirements": requirements,
             "code_chunks": code_chunks,
             "candidates": candidates,
-            "test_cases": test_cases
+            "test_cases": test_cases,
+            "verification_matrix" : verification_matrix
         }
         )
