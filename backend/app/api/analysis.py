@@ -21,11 +21,15 @@ def run_analysis(project_id: int,
     """Получение текста из загруженных документов, выделение из них требований и исходного кода.
 
     Args:
-        project_id (int): _description_
-        db (Session, optional): _description_. Defaults to Depends(get_db).
+        project_id (int): Схема создания проекта.
+        db (Session, optional): Сессия БД от database.py.
 
     Raises:
-        HTTPException: _description_
+        HTTPException: "Project not found", "Requirements document not found", "Souce code document not found".
+
+    Returns: 
+        
+    
     """
     # select * from projects pr where pr.id = project_id limit 1
     project = db.query(models.Project).filter(models.Project.id == project_id).first()

@@ -21,9 +21,14 @@ async def load_document(project_id: int,
     """Загрузка документа в проект
 
     Args:
-        project_id (int): _description_
-        document_type (str, optional): _description_. Defaults to Form(...).
-    Returns:
+        project_id (int): Схема создания проекта.
+        document_type (str, optional): Сессия БД от database.py.
+
+    Raises:
+        HTTPException: "Project not found", "Document_type must be requirements or source_code", "Filename not found", f"Extension should be in {allowed_extensions}".
+
+    Returns: 
+        db_document (models.Document)
 
     """
     # select * from projects pr where pr.id = project_id limit 1
