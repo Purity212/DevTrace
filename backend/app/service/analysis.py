@@ -34,6 +34,18 @@ def analyze(text_from_req_file: str, text_from_code_file: str):
     """
     Функция анализирует текста, извлеченные из документов, по ним находит кандидатов на соответствие требования - фрагмента исходного кода,
     формирует базовые тест-кейсы для фрагмента, матрицу верификации.
+
+    Args:
+        text_from_req_file (str): Извлеченный текст из документа требований.
+        text_from_code_file (str):  Извлеченный текст из документа исходного кода.
+
+    Returns:
+        Объект анализа (AnalyzeData), из которого можно получать, данные об анализе, обращаясь по следующим ключам:
+        1. requirements (list[RequirementData]): Извлеченные требования.
+        2. code_chunks (list[CodeChunkData]): Извлеченный ИК.
+        3. candidates (list[CandidateData]): Перечень кандидатов.
+        4. test_cases (list[TestCaseData]): Перечень тест-кейсов.
+        5. verification_matrix (list[VerificationMatrixRowData]): Перечень строк матрицы верификации.
     """
 
     # извлечение требований из документа
