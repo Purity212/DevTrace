@@ -1,18 +1,24 @@
+import requests
 import streamlit as st
-
 
 st.set_page_config(page_title="DevTrace | Projects", page_icon="DT", layout="wide")
 
+API_BASE = "http://127.0.0.1:8000" # для общения с fastapi
+
+def get_projects():
+    response = requests.get(f"{API_BASE}/projects", timeout=10)
+    response.raise_for_status()
+    return response.json()
+
+def create_project(name: str, desc: str):
+    input = {"name": name, "description": desc}
+    response = requests.post(f"{API_BASE}/projects", json=input, timeout=10)
+    return response.json()
+
+
+
 # GET /api/projects
-DEFAULT_PROJECTS = [  
-    {"id": 2, "name": "X_eng", "description": "Y_eng"},
-    {"id": 1, "name": "X", "description": "X"},
-]
-
-
-if "projects_demo_data" not in st.session_state:
-    st.session_state.projects_demo_data = DEFAULT_PROJECTS.copy()
-
+st.session_state.projects_demo_data = get_projects()
 
 st.title("Projects")
 st.write("Болванка страницы проектов без привязки к API.")
@@ -29,23 +35,22 @@ if create_clicked:
         next_project_id = (
             max((project["id"] for project in st.session_state.projects_demo_data), default=0) + 1
         )
-        created_project = {
-            "id": next_project_id,
-            "name": project_name.strip(),
-            "description": project_description.strip(),
-        }
+        created_project = create_project(name=project_name, desc=project_description)
         st.session_state.projects_demo_data.insert(0, created_project)
         st.success(f"Демо-проект создан. Присвоен id={next_project_id}.")
     else:
         st.warning("Введите название проекта.")
 
+if st.button("Архивировать проекты"):
+    st.session_state.projects_demo_data = []
+    st.info("Демо-список проектов восстановлен.")
+
+
 st.subheader("Список проектов")
+projects = st.session_state.projects_demo_data
 st.dataframe(
-    st.session_state.projects_demo_data,
+    projects,
     use_container_width=True,
     hide_index=True,
 )
 
-if st.button("Сбросить демо-проекты"):
-    st.session_state.projects_demo_data = DEFAULT_PROJECTS.copy()
-    st.info("Демо-список проектов восстановлен.")
