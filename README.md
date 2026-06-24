@@ -1,48 +1,125 @@
-# DevTrace Verification Assistant — MVP 1
+# DevTrace: MVP 1
 
-DevTrace Verification Assistant — учебный прототип инструмента для поддержки верификатора инженерного ПО: система связывает требования с фрагментами исходного кода, генерирует черновики тест-кейсов и формирует verification matrix.  
-Проект не выполняет формальную верификацию, а помогает быстрее подготовить первичный анализ `требование → код → тест-кейс → решение верификатора`.  
-MVP 1 сделан для курсовой работы и закладывает основу для дальнейшего развития в полноценный AI-assisted verification tool.
+DevTrace — учебный прототип инструмента для первичного анализа трассируемости между требованиями и исходным кодом.
+
+Проект помогает быстро получить цепочку:
+
+```text
+требование -> фрагмент кода -> тест-кейс -> матрица трассируемости кода на требования
+```
+
+## Актуальные требования MVP 1
+
+Сокращённая и актуальная спецификация проекта: [DevTrace Requirements.md](DevTrace Requirements.md)
+
+## Что реализовано
+
+Цель текущего MVP 1:
+
+- загрузить документы проекта;
+- извлечь требования;
+- извлечь фрагменты Python-кода;
+- найти кандидатов на соответствие `требование -> код`;
+- сгенерировать черновые test cases;
+- показать матрицу верификации.
+
+## Ограничения текущего MVP
+
+В текущую версию не входят:
+
+- авторизация;
+- ручное изменение статуса верификации и комментирования;
+- отдельный редактор тест-кейсов (заглушка);
+- ручное добавление тест-кейсов (заглушка);
+- Экспорт в CSV;
+- Docker / docker-compose;
+- OpenAI API, embeddings, vector DB. (предполагается полноценный ИИ-ассистент)
 
 ## Стек
 
-- **FastAPI** — backend API для загрузки документов, запуска анализа и работы с матрицей.
-- **Streamlit** — простой frontend для загрузки файлов, просмотра результатов и редактирования статусов.
-- **SQLite** — локальная БД для хранения проектов, требований, фрагментов кода, тест-кейсов и решений верификатора.
-- **SQLAlchemy** — работа с БД через ORM.
-- **scikit-learn** — TF-IDF + cosine similarity для поиска связи между требованием и кодом.
-- **pandas / csv** — экспорт verification matrix в CSV.
-- **pytest** — минимальные тесты сервисного слоя.
-- **Docker Compose** — локальный запуск backend и frontend.
+- **FastAPI** — backend API.
+- **Streamlit** — frontend.
+- **SQLite** — локальная база данных.
+- **SQLAlchemy** — ORM.
+- **Pydantic** — схемы API.
+- **scikit-learn** — TF-IDF + cosine similarity.
+- **pandas** — табличное представление данных во frontend.
 
-## Короткий сценарий использования
+## Локальный запуск
 
-1. Пользователь создаёт проект и загружает `requirements.md` и `source_code.py/.c`.
-2. Система извлекает требования, фрагменты кода, ищет candidate links и генерирует draft test cases.
-3. Верификатор просматривает verification matrix, меняет статусы/комментарии, редактирует тест-кейсы и экспортирует результат в CSV.
+Установка зависимостей:
 
+```bash
+pip install -r requirements.txt
+```
 
-## Пример архитектуры проекта
+Запуск backend:
+
+```bash
+uvicorn backend.app.main:app --reload
+```
+
+Запуск frontend:
+
+```bash
+streamlit run frontend/app.py
+```
+
+После первого запуска backend создаёт локальную БД:
+
+```text
+devtrace.db
+```
+
+## Короткий сценарий демо
+
+1. Создать проект на странице `Projects`.
+
+![alt text](img/proj.png)
+---
+2. Загрузить документ требований и `.py` файл исходного кода на странице 
+`Documents`. (для демострации лежат в tests/)
+![alt text](img/docs.png)
+---
+3. Запустить анализ на странице `Analysis`.
+![alt text](img/analyze.png)
+---
+4. Посмотреть verification matrix и промежуточные результаты анализа.
+![alt text](img/verif.png)
+---
+
+## Тестовые файлы
+
+Для демо можно использовать:
+
+- [sample_requirements.md](tests/sample_requirements.md)
+- [sample_source_code.py](tests/sample_source_code.py)
+- [requirements_eng.md](tests/requirements_eng.md)
+
+## Пример архитектуры проекта (общая картина)
+
 ![Пример архитектуры проекта](img/arch_example.jpg)
 
 ## Пример UI проекта
+
 ![Пример UI проекта](img/ui_example.jpg)
 
 ## Правила ведения git
 
-| Тип        | Когда использовать                                              | Пример                                         |
-| ---------- | --------------------------------------------------------------- | ---------------------------------------------- |
-| `feat`     | добавлена новая пользовательская или системная функциональность | `feat: add project creation API`               |
-| `fix`      | исправление бага                                                | `fix: handle empty file upload`                |
-| `docs`     | изменения только в документации                                 | `docs: add MVP requirements document`          |
-| `test`     | добавление или изменение тестов                                 | `test: add requirement extractor tests`        |
-| `chore`    | технические, служебные изменения, не влияющие на бизнес-логику  | `chore: initialize project structure`          |
-| `refactor` | переработка кода без изменения поведения                        | `refactor: simplify extractor pipeline`        |
-| `style`    | правки форматирования/стиля кода без изменения логики           | `style: format code with black`                |
-| `perf`     | улучшение производительности                                    | `perf: optimize TF-IDF similarity calculation` |
-| `build`    | изменения сборки, зависимостей, packaging                       | `build: add poetry dependencies`               |
-| `ci`       | изменения CI/CD                                                 | `ci: add GitHub Actions workflow`              |
-| `revert`   | откат предыдущего коммита                                       | `revert: revert draft test case generator`     |
+| Тип | Когда использовать | Пример |
+|---|---|---|
+| `feat` | добавлена новая функциональность | `feat: add project creation API` |
+| `fix` | исправление бага | `fix: handle empty file upload` |
+| `docs` | изменения только в документации | `docs: update MVP spec` |
+| `test` | добавление или изменение тестов | `test: add requirement extractor tests` |
+| `chore` | служебные изменения | `chore: initialize project structure` |
+| `refactor` | переработка кода без изменения поведения | `refactor: simplify extractor pipeline` |
+| `style` | форматирование без изменения логики | `style: format code with black` |
+| `perf` | улучшение производительности | `perf: optimize TF-IDF similarity calculation` |
+| `build` | изменения зависимостей и сборки | `build: update requirements` |
+| `ci` | изменения CI/CD | `ci: add GitHub Actions workflow` |
+| `revert` | откат предыдущего коммита | `revert: revert draft test case generator` |
 
-![Схема БД с применяемыми в проекте типами](img/db_schema.png)
+## Схема БД
 
+![Схема БД](img/db_schema.png)

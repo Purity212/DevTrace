@@ -42,12 +42,12 @@ def build_verification_matrix(requirements: list[RequirementData],
                 {
                     "requirement_key": key, 
                     "requirement_text": req["text"],
-                    "candidate_code": candidate["code_chunk_name"],
-                    "similarity_score": candidate["similarity_score"],
-                    "system_status" : candidate["candidate_status"],
+                    "candidate_code": candidate["code_chunk_name"] if candidate else None,
+                    "similarity_score": candidate["similarity_score"] if candidate else 0.0,
+                    "system_status" : candidate["candidate_status"] if candidate else "no_candidate_found",
                     "test_cases_count" : req_test_case.get(key, 0),
-                    "verifier_status" : "?",
-                    "verifier_comment" : "?"
+                    "verifier_status" : "todo",
+                    "verifier_comment" : "todo"
                 }
             )
         )

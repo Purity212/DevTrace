@@ -1,98 +1,132 @@
+from datetime import datetime
+
+import pandas as pd
+import requests
 import streamlit as st
 
-
-st.set_page_config(page_title="DevTrace | Documents", page_icon="DT", layout="wide")
-
-
-DEFAULT_PROJECTS = [
-    {"id": 2, "name": "X_eng", "description": "Y_eng"},
-    {"id": 1, "name": "X", "description": "X"},
-]
-
-# GET /api/projects/{project_id}/documents
-DEFAULT_DOCUMENTS = [
-    {
-        "id": 2,
-        "project_id": 2,
-        "filename": "flight_requirements_v1.docx",
-        "document_type": "requirement",
-    },
-    {
-        "id": 1,
-        "project_id": 2,
-        "filename": "autopilot_controller.cpp",
-        "document_type": "source_code",
-    },
-]
+from api_client import extract_error_message, get_documents, upload_document
 
 
-if "projects_demo_data" not in st.session_state:
-    st.session_state.projects_demo_data = DEFAULT_PROJECTS.copy()
+def format_document_type(document_type: str) -> str:
+    mapping = {
+        "requirements": "Требования",
+        "source_code": "Исходный код",
+    }
+    return mapping.get(document_type, document_type)
 
-if "documents_demo_data" not in st.session_state:
-    st.session_state.documents_demo_data = DEFAULT_DOCUMENTS.copy()
+
+def format_created_at(value: str | None) -> str:
+    if not value:
+        return ""
+
+    try:
+        dt = datetime.fromisoformat(value.replace("Z", "+00:00"))
+    except ValueError:
+        return value
+
+    return dt.strftime("%d.%m.%Y %H:%M:%S")
 
 
-st.title("Documents")
-st.write("Болванка страницы документов без привязки к API.")
+st.title("Документы")
+st.write("Загрузка документов требований и исходного кода в активный проект.")
 
-projects = st.session_state.projects_demo_data
-documents = st.session_state.documents_demo_data
+selected_project_id = st.session_state.get("selected_project_id")
+selected_project_label = st.session_state.get("selected_project_label")
 
-if not projects:
-    st.warning("Сначала создайте проект на вкладке Projects.")
+if not selected_project_id:
+    st.warning("Сначала выберите проект на странице «Проекты».")
     st.stop()
 
-project_options = {
-    f"{project['id']} - {project['name']}": project["id"] for project in projects
-}
+st.info(f"Активный проект: {selected_project_label}")
 
-selected_project_label = st.selectbox("Проект", list(project_options.keys()))
-selected_project_id = project_options[selected_project_label]
-
-# POST /api/projects/{project_id}/documents
-st.subheader("Загрузить документ")
-with st.form("upload_document_form", clear_on_submit=True):
-    document_type = st.selectbox(
-        "Тип документа",
-        ["requirement", "source_code"],
-        format_func=lambda value: "Требование" if value == "requirement" else "Исходный код",
-    )
-    uploaded_file = st.file_uploader("Документ")
-    upload_clicked = st.form_submit_button("Загрузить документ")
-
-if upload_clicked:
-    if uploaded_file is None:
-        st.warning("Выберите файл.")
-    else:
-        next_document_id = (
-            max((document["id"] for document in st.session_state.documents_demo_data), default=0) + 1
-        )
-        created_document = {
-            "id": next_document_id,
-            "project_id": selected_project_id,
-            "filename": uploaded_file.name,
-            "document_type": document_type,
-        }
-        st.session_state.documents_demo_data.insert(0, created_document)
-        st.success(
-            f"Демо-документ добавлен в проект id={selected_project_id}. "
-            f"Присвоен id={next_document_id}."
-        )
-
-project_documents = [
-    document
-    for document in st.session_state.documents_demo_data
-    if document["project_id"] == selected_project_id
-]
-
-st.subheader("Список документов проекта")
-st.dataframe(
-    project_documents,
-    use_container_width=True,
-    hide_index=True,
+requirements_file = st.file_uploader(
+    "Документ требований",
+    type=["md", "txt"],
+    key="requirements_file",
 )
 
-if st.button("Сбросить демо-документы"):
-    st.session_state.documents_demo_data = DEFAULT_DOCUMENTS.copy()
-    st.info("Демо-список документов восстановлен.")
+if st.button("Загрузить требования", use_container_width=True):
+    if requirements_file is None:
+        st.warning("Выберите файл требований.")
+    else:
+        try:
+            uploaded = upload_document(
+                project_id=selected_project_id,
+                document_type="requirements",
+                uploaded_file=requirements_file,
+            )
+        except requests.HTTPError as exc:
+            st.error(extract_error_message(exc.response))
+        except requests.RequestException as exc:
+            st.error(f"Ошибка загрузки документа требований: {exc}")
+        else:
+            st.success(f"Загружен файл: {uploaded['filename']}")
+            st.rerun()
+
+source_code_file = st.file_uploader(
+    "Документ исходного кода",
+    type=["py"],
+    key="source_code_file",
+)
+
+st.caption("Для MVP принимаются только Python-файлы `.py`.")
+
+if st.button("Загрузить исходный код", use_container_width=True):
+    if source_code_file is None:
+        st.warning("Выберите файл исходного кода.")
+    else:
+        try:
+            uploaded = upload_document(
+                project_id=selected_project_id,
+                document_type="source_code",
+                uploaded_file=source_code_file,
+            )
+        except requests.HTTPError as exc:
+            st.error(extract_error_message(exc.response))
+        except requests.RequestException as exc:
+            st.error(f"Ошибка загрузки исходного кода: {exc}")
+        else:
+            st.success(f"Загружен файл: {uploaded['filename']}")
+            st.rerun()
+
+st.subheader("Документы проекта")
+try:
+    documents = get_documents(selected_project_id)
+except requests.HTTPError as exc:
+    st.error(extract_error_message(exc.response))
+except requests.RequestException as exc:
+    st.error(f"Не удалось получить документы проекта: {exc}")
+else:
+    if documents:
+        documents_df = pd.DataFrame(documents)
+        documents_df["document_type"] = documents_df["document_type"].map(format_document_type)
+        if "created_at" in documents_df.columns:
+            documents_df["created_at"] = documents_df["created_at"].apply(format_created_at)
+
+        documents_df = documents_df.rename(
+            columns={
+                "id": "ID",
+                "project_id": "ID проекта",
+                "filename": "Файл",
+                "document_type": "Тип документа",
+                "created_at": "Дата загрузки",
+            }
+        )
+
+        visible_columns = ["ID", "Файл", "Тип документа", "Дата загрузки"]
+        visible_columns = [column for column in visible_columns if column in documents_df.columns]
+
+        st.data_editor(
+            documents_df[visible_columns],
+            use_container_width=True,
+            hide_index=True,
+            disabled=True,
+            column_config={
+                "ID": st.column_config.NumberColumn("ID", width="small"),
+                "Файл": st.column_config.TextColumn("Файл", width="large"),
+                "Тип документа": st.column_config.TextColumn("Тип документа", width="medium"),
+                "Дата загрузки": st.column_config.TextColumn("Дата загрузки", width="medium"),
+            },
+        )
+    else:
+        st.info("Документы для проекта пока не загружены.")

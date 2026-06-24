@@ -1,3 +1,4 @@
+from datetime import datetime
 from pydantic import BaseModel
 
 # TODO: дописать Docstrings для классов
@@ -32,6 +33,7 @@ class DocumentRead(BaseModel):
     project_id: int
     filename: str
     document_type: str
+    created_at: datetime | None = None
     
     class Config:
         from_attributes = True # работа с sqlalchemy объектами в json
