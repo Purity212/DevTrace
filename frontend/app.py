@@ -1,42 +1,60 @@
 import streamlit as st
 
+from api_client import DEFAULT_API_BASE, check_health
+
 
 st.set_page_config(page_title="DevTrace", page_icon="DT", layout="wide")
 
-st.title("Авторизация DevTrace")
-st.write(
-    "Страница входа для инженера-программиста, "
-    "который проводит анализ кода и верификацию."
-)
+if "api_base" not in st.session_state:
+    st.session_state.api_base = DEFAULT_API_BASE
 
-username = st.text_input("Логин")
-password = st.text_input("Пароль", type="password")
-workspace = st.selectbox(
-    "Контур доступа", ["Анализ требований", 
-     "Анализ исходного кода", 
-     "Генерация матрицы трассируемости",
-     "Генерация тест-кейсов",
-     "Генерация отчетов"
-     ]
-)
-remember = st.checkbox("Запомнить устройство")
-
-if st.button("Войти"):
-    if username and password:
-        st.success(
-            f"Демо-вход выполнен: {username}. "
-            f"Выбран контур: {workspace}. "
-            f"{'Устройство будет запомнено' if remember else 'Устройство не будет запомнено'}"
-        )
-    else:
-        st.warning("Введите логин и пароль.")
-
-st.divider()
+st.title("DevTrace: матрица верификации")
 st.markdown(
     """
-    Функционал 
-    - `Projects` — создание проекта и просмотр списка проектов.
-    - `Documents` — загрузка документов в проект и просмотр списка документов.
-    - `Analysis` — дальнейший анализ и верификация.
+    DevTrace — учебный инструмент для инженера по верификации, QA-инженера и разработчика,
+    которому нужно быстро связать требования с исходным кодом и получить первичную
+    матрицу верификации.
+
+    **Что уже можно показать**
+    - создание проекта;
+    - загрузка документа требований и исходного кода;
+    - запуск анализа;
+    - просмотр матрицы верификации.
+
+    **TODO**
+    - полноценная авторизация пока не реализована;
+    - текущий экран входа заменен на техническую стартовую страницу.
     """
 )
+
+with st.sidebar:
+    st.subheader("Подключение к API")
+    st.text_input("Адрес FastAPI", key="api_base")
+
+    if st.button("Проверить API", use_container_width=True):
+        try:
+            payload = check_health()
+        except Exception as exc:
+            st.error(f"API недоступен: {exc}")
+        else:
+            st.success(f"API отвечает: {payload}")
+
+    st.caption("Запуск API: `uvicorn backend.app.main:app --reload`")
+
+st.markdown(
+    """
+    **Сценарий демо**
+
+    1. Открыть страницу проектов (`Projects`) и создать или выбрать проект.
+    2. Открыть страницу документов (`Documents`) и загрузить требования и исходный код.
+    3. Открыть страницу анализа (`Analysis`) и запустить анализ для показа матрицы верификации.
+    """
+)
+
+selected_project_id = st.session_state.get("selected_project_id")
+selected_project_label = st.session_state.get("selected_project_label")
+
+if selected_project_id:
+    st.info(f"Текущий проект: {selected_project_label}")
+else:
+    st.warning("Текущий проект не выбран.")
