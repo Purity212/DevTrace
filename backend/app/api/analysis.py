@@ -42,8 +42,18 @@ def get_documents_info(project_id: int, db: Session = Depends(get_db)):
         
         return req_doc, code_doc
 
+def clear_project_analysis_data(project_id: int, db: Session) -> None:
+    """ Очистка результатов прошлых запусков из БД"""
+
+    db.query(models.CodeChunk).filter(models.CodeChunk.project_id == project_id
+                                      ).delete(synchronize_session=False)
+
+    db.query(models.Requirement).filter(models.Requirement.project_id == project_id
+                                        ).delete(synchronize_session=False)
+
 def write_requirements(project_id: int, requirements: list[RequirementData], db: Session = Depends(get_db)):
-     
+    """
+    """
     key_req_dict = {}
 
     for req in requirements:
@@ -53,26 +63,32 @@ def write_requirements(project_id: int, requirements: list[RequirementData], db:
             text=req["text"]
         )
 
-    db.add(db_req)
-    db.flush()
+        db.add(db_req)
+        db.flush()
+        key_req_dict[req["requirement_key"]] = db_req
+    
+    return key_req_dict
 
 
-def write_code_chunks(project_id: int, code_chunks: list[CodeChunkData], db: Session = Depends(get_db)):
-     
+def write_code_chunks(project_id: int, filename: str, code_chunks: list[CodeChunkData], db: Session = Depends(get_db)):
+    """
+    """
     key_code_chunk_dict = {}
 
     for cch in code_chunks:
-        db_req = models.CodeChunk(
+        db_chunk = models.CodeChunk(
             project_id = project_id,
-            filename = "???",
+            filename = filename,
             function_name = cch['name'],
             content = cch['content'],
             start_line = cch['start_line'],
             end_line = cch['end_line']
         )
 
-    db.add(db_req)
-    db.flush()
+        db.add(db_chunk)
+        db.flush()
+    
+        key_code_chunk_dict[(cch["name"], cch["content"])] = db_chunk
      
 
 @router.post("")
@@ -95,16 +111,17 @@ def get_analysis(project_id: int, db: Session = Depends(get_db)):
 
     try:
         # нужно сначала почистить данные
+        clear_project_analysis_data(project_id, db)
 
-        write_requirements(project_id=project_id, requirements=req_doc.content, db=db)
-        write_code_chunks(project_id=project_id, code_chunks=code_doc.content, db=db)
+        write_requirements(project_id=project_id, requirements=result['requirements'], db=db)
+        write_code_chunks(project_id=project_id, filename=code_doc.filename, code_chunks=result['code_chunks'], db=db)
 
         db.commit()
     except Exception:
         db.rollback()
         raise
 
-    return db.query(models.Requirement).filter(models.Project.id == project_id)
+    return result
 
 
 
