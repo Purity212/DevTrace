@@ -50,6 +50,10 @@ def clear_project_analysis_data(project_id: int, db: Session) -> None:
 
     db.query(models.Requirement).filter(models.Requirement.project_id == project_id
                                         ).delete(synchronize_session=False)
+    
+    db.query(models.VerificationItem).filter(models.VerificationItem.project_id == project_id
+                                      ).delete(synchronize_session=False)
+
 
 def write_requirements(project_id: int, requirements: list[RequirementData], db: Session = Depends(get_db)):
     """
@@ -89,6 +93,34 @@ def write_code_chunks(project_id: int, filename: str, code_chunks: list[CodeChun
         db.flush()
     
         key_code_chunk_dict[(cch["name"], cch["content"])] = db_chunk
+    
+    return key_code_chunk_dict
+
+def write_verification_items(project_id: int,
+    candidates: list[CandidateData],
+    requirements_by_key: dict[str, models.Requirement],
+    code_chunks_by_signature: dict[tuple[str, str], models.CodeChunk],
+    db: Session):
+    for candidate in candidates:
+        db_requirement = requirements_by_key[candidate["requirement_key"]]
+
+        code_chunk_id = None
+        if (candidate["code_chunk_name"] is not None
+            and candidate["code_chunk_content"] is not None):
+            db_code_chunk = code_chunks_by_signature[(candidate["code_chunk_name"], candidate["code_chunk_content"])]
+            code_chunk_id = db_code_chunk.id
+
+        db_item = models.VerificationItem(
+            project_id=project_id,
+            requirement_id=db_requirement.id,
+            code_chunk_id=code_chunk_id,
+            similarity_score=candidate["similarity_score"],
+            candidate_status=candidate["candidate_status"],
+            verifier_status="?",
+            verifier_comment="?",
+        )
+
+        db.add(db_item)
      
 
 @router.post("")
@@ -113,8 +145,14 @@ def get_analysis(project_id: int, db: Session = Depends(get_db)):
         # нужно сначала почистить данные
         clear_project_analysis_data(project_id, db)
 
-        write_requirements(project_id=project_id, requirements=result['requirements'], db=db)
-        write_code_chunks(project_id=project_id, filename=code_doc.filename, code_chunks=result['code_chunks'], db=db)
+        requirements_by_key = write_requirements(project_id=project_id, requirements=result['requirements'], db=db)
+        code_chunks_by_sign = write_code_chunks(project_id=project_id, filename=code_doc.filename, code_chunks=result['code_chunks'], db=db)
+
+        write_verification_items(project_id=project_id,
+                                 candidates=result['candidates'],
+                                 requirements_by_key=requirements_by_key,
+                                 code_chunks_by_signature=code_chunks_by_sign,
+                                 db=db)
 
         db.commit()
     except Exception:
