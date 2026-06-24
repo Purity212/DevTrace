@@ -103,10 +103,11 @@ def find_candidates(requirements: list[RequirementData], code_chunks: list[CodeC
         # определение статуса кандидата (временно грубая оценка по score)
 
         candidate = CandidateData(
-            {"requirement_key": requirement["requirement_key"],
+            {
+            "requirement_key": requirement["requirement_key"],
             "requirement_text": requirement["text"],
-            "code_chunk_name": code_chunk['name'] if status != "no_candidate_found" else "no_candidate_found",
-            "code_chunk_content" : code_chunk['content'] if status != "no_candidate_found" else "no_candidate_found",
+            "code_chunk_name": code_chunk['name'] if status != "no_candidate_found" else None,
+            "code_chunk_content" : code_chunk['content'] if status != "no_candidate_found" else None,
             "similarity_score": round(req_best_score, 5),
             "candidate_status": status})
 
